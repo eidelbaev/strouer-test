@@ -40,3 +40,74 @@ plus place it behind some reverse proxy like `nginx` to allow application
 server do only its direct tasks and leave low-level networking, caching
 and access control on a high-performance web server.
 
+### Base Data Modeling
+
+Let's take a look at the data we are going to work with.
+We need to perform CRUD operations over two entities: Post and Comment.
+Author (or User) model is redundant for this task - `user_id` for loaded 
+from Fake API Posts will remain simple integer value, for the new Posts
+it will always be a constant value of `99999942`.
+
+At the first glance, we need to create the following Models and fields:
+
+- Post
+    - `id`: int, primary key
+    - `user_id`: int
+    - `title`: str, max length = 256
+    - `body`: str, max length = 1024 (let's say, short Posts only)
+
+- Comment
+    - `id`: int, primary key
+    - `post_id`: int, foreigh key to Post
+    - `name`: str, max length = 128
+    - `email`: str, max length = 128
+    - `body`: str, max length = 1024 (let's say, short Posts only)
+
+*`body` fields will have CharField class instead of TextField, becuse
+TextField is too big for our purposes (65,535 bytes max) and can't
+be limited to lower size, except of 255 bytes which is too low.
+
+During working on the Synchronization topic we could further extend 
+our models and even create new ones.
+
+### Synchronization
+
+As I understand from the task description and from the answer to my question,
+I need to implement data synchronization mechanism from this Master system to
+the Fake API Target system.
+
+Here I see 2 ways of doing it: 
+1. Dump all.
+2. Apply only changes made since the last synchronization 
+    (differential event-driven sync).
+
+< Elaborate on the second option, why it's better and how I want to
+implement it... >
+
+We can log actions like Created, Updated, Deleted on our models
+and then merge them into Actions to be performed.
+For example:
+- if the Post was Created, then Updated - we will send only one
+    POST request to /posts endpoint;
+- if the Post was Created, Updated and them Deleted - we will not
+    send any requests;
+
+< This chapter will continue to be updated ... >
+
+
+<!-- TODO Some notes:
+
+1. For the initial import of posts and comments and for further sync
+we need to implement a Fake API service abstraction that will handle it.
+
+Limitadions of Fake API:
+- no filtration: batch processing is not possible, only "load all"
+- I assume that POST method on /posts and /posts/{id}/comments endpoints 
+    expects only single entry. That means we need to create Posts and Comments
+    one-by-one.
+- I assume, that 
+- Since our target system is available only via simple REST API, we cannot
+
+
+
+ -->
