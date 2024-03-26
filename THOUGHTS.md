@@ -63,12 +63,38 @@ At the first glance, we need to create the following Models and fields:
     - `email`: str, max length = 128
     - `body`: str, max length = 1024 (let's say, short Posts only)
 
-*`body` fields will have CharField class instead of TextField, becuse
-TextField is too big for our purposes (65,535 bytes max) and can't
-be limited to lower size, except of 255 bytes which is too low.
+Notes:
+ - `body` fields will have CharField class instead of TextField, becuse
+    TextField is too big for our purposes (65,535 bytes max) and can't
+    be limited to lower size, except of 255 bytes which is too low.
+- I used snake_case naming convention instead of camelCase used in
+    Fake API for better alighnment with the Python standards.
 
 During working on the Synchronization topic we could further extend 
 our models and even create new ones.
+
+### Initial data import
+
+In order to import initial data in our system from Fake API we need to use
+Django command.
+
+Since this command is intended to be used only once for an initial data
+import, I propose that in order to execute the command, several conditions 
+must be met: 
+- Tables for `Posts` and `Comments` must be empty;
+- Increment values for `id`s must be reset to 0, so that we can insert
+    imported posts with their real ids and the next post created on our 
+    system will get the incremented value from the imported post and
+    not from the previously created posts (on our system, during tests).
+
+Since our application is synchronous, I'm going to use `requests` library
+for fetching data from the Fake API. In case we were developing async
+application, I would choose `httpx` or `aiohttp` client.
+
+I intentionally didn't implement any exceptions handling in this command,
+bacause it brings only unnececessary complexity to the code. This is a
+internal command that should be used only once, so it's okay to receive
+an unhandled exception.
 
 ### Synchronization
 
