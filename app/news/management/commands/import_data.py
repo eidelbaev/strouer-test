@@ -5,7 +5,7 @@ from typing import Any, Literal
 import requests
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.db import connection, transaction
 
 from news.models import Post, Comment
 
@@ -27,6 +27,19 @@ def map_comments_to_post_id(comments: list[dict]) -> dict[int, list[dict]]:
     for comment in comments:
         result[comment["postId"]].append(comment)
     return result
+
+def update_db_sequences() -> None:
+    """Set current values of PK sequences accordingly to the data we have."""
+    max_post_id = Post.objects.latest('id').id
+    max_comment_id = Comment.objects.latest('id').id
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT setval('news_post_id_seq', %s);", [max_post_id]
+            )
+        cursor.execute(
+            "SELECT setval('news_comment_id_seq', %s);", [max_comment_id]
+            )
 
 class Command(BaseCommand):
     help = "Import initial Posts and Comments data into database."
@@ -58,12 +71,18 @@ class Command(BaseCommand):
                         body=comment["body"],
                     )
 
+        # At this point our data has been already imorted and we need to
+        # update postgresql sequences for primary keys, because it doesn't
+        # happen automatically when we specify primary key explicitly.
+        update_db_sequences()
+
         end = datetime.now()
         end_str = end.strftime("%m/%d/%Y, %H:%M:%S")
         elapsed_sec = (end - start).total_seconds()
         self.stdout.write(
             self.style.SUCCESS(
-                f"{end_str}: Imported {len(posts)} posts and {len(comments)} comments, "
+                f"{end_str}: Imported {len(posts)} posts "
+                f"and {len(comments)} comments, "
                 f"elapsed time: {elapsed_sec:.2f}s."
             )
         )

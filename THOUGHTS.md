@@ -1,4 +1,4 @@
-### Requirements amalyzing 
+### 1. Requirements amalyzing 
 
 Let's start with analyzing our requirements.
 
@@ -25,7 +25,7 @@ Since this is a green field application, I'm going to use the freshest LTS
 - PostgreSQL 16 
 - Psycopg 2.9.9 (starts supporting Python 3.12)
 
-### Start of development
+### 2. Start of development
 
 I created an initial Django application using `django-admin` command.
 
@@ -40,7 +40,7 @@ plus place it behind some reverse proxy like `nginx` to allow application
 server do only its direct tasks and leave low-level networking, caching
 and access control on a high-performance web server.
 
-### Base Data Modeling
+### 3. Base Data Modeling
 
 Let's take a look at the data we are going to work with.
 We need to perform CRUD operations over two entities: Post and Comment.
@@ -73,7 +73,7 @@ Notes:
 During working on the Synchronization topic we could further extend 
 our models and even create new ones.
 
-### Initial data import
+### 4. Initial data import
 
 In order to import initial data in our system from Fake API we need to use
 Django command.
@@ -96,7 +96,72 @@ bacause it brings only unnececessary complexity to the code. This is a
 internal command that should be used only once, so it's okay to receive
 an unhandled exception.
 
-### Synchronization
+### 5. CRUD API
+
+I want to start with implementing CRUD API first, without implementing any
+synchronization-related measures. Since this application will be "released"
+only with synchronization in place, it's totally fine to have something
+slightly rebuilt/redesigned during the development.
+
+**Actions that our API should support:**
+
+Post:
+- Get list of Posts (paginated and all)
+- Create single Post
+- Get single Post
+- Update single Post (full update, not partial)
+- Delete single Post
+
+Comments:
+- Get list of Comments for exact Post (paginated and all)
+- Create new Comment for exact Post
+- Get single Comment
+- Update single Comment (full update, not partial)
+- Delete single Comment
+
+**Endpoints that should be implemented:**
+
+Posts:
+- `GET /posts/` - Get list of Posts
+- `POST /posts/` - Create single Post
+- `GET /posts/{post_id}/` - Get single Post
+- `PUT /posts/{post_id}/` - Update single Post
+- `DELETE /posts/{post_id}/` - Delete single Post
+
+Comments:
+- `GET /comments/{comment_id}/` - Get single Comment
+- `PUT /comments/{comment_id}/` - Update single Comment
+- `DELETE /comments/{comment_id}/` - Delete single Comment
+
+Nested endpoints:
+- `GET /posts/{post_id}/comments/` - Get list of Comments for exact Post
+- `POST /posts/{post_id}/comments/` - Create single Comment for exact Post
+
+* Note that these endpoints will be located after application's base 
+namespace `/news/`. For example `/posts/` will be accesable via
+`localhost:8000/news/posts/`.
+
+For simplicity I used ModelViewSet and GenericViewSet with Mixins.
+For the same reason I decided not to implement nested views such as 
+Comments list in Post.
+
+#### 5.1 Issue with primary keys
+
+During testing POST /posts endpoint I found an issue: Imported by management
+command objects didn't increment sequences for `post.id` and `comment.id` 
+primary key fields. This is how objects creation in Django works using
+PostgreSQL when we provide primary key values explicitly.
+
+I came up with solution to manually update sequences to the right numbers 
+after data import. I searched and found that this is a common solution
+for this issue.
+
+#### 5.2 Authentication 
+
+for authentication I used `djangorestframework-simplejwt` library which allows
+us to work with JSON Web Tokens for authentication.
+
+### 6. Synchronization
 
 As I understand from the task description and from the answer to my question,
 I need to implement data synchronization mechanism from this Master system to
