@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
 from rest_framework.mixins import (
     CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin,
@@ -49,9 +50,11 @@ class CommentsInPostViewSet(
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
+        get_object_or_404(Post, pk=post_id)  # return 404 if Post not found
         return Comment.objects.filter(post_id=post_id).order_by("-id")
     
     def perform_create(self, serializer):
         post_id = self.kwargs.get("post_id")
+        get_object_or_404(Post, pk=post_id)  # return 404 if Post not found
         serializer.save(post_id=post_id)
         return super().perform_create(serializer)

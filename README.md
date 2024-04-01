@@ -12,7 +12,7 @@ docker compose exec web python manage.py migrate --noinput
 ```
 
 Let's create a superuser (very bad idea to have credentials here,
-but it's just for the demo purposes):
+but it's just for the demo purposes), we will need these credentials later:
 ```bash
 export DJANGO_SUPERUSER_USERNAME=admin
 export DJANGO_SUPERUSER_PASSWORD=admin
@@ -23,7 +23,15 @@ docker compose exec web python manage.py createsuperuser --noinput
 
 ### Run the application
 
-...
+```bash
+docker compose up -d --build
+```
+
+### Import initial data
+
+```bash
+docker compose exec web python manage.py import_data
+```
 
 ### Authentication
 
@@ -86,4 +94,25 @@ Example output (10 most recent posts):
     ...
   ]
 }
+```
+
+### Running Sync command
+
+```bash
+docker compose exec web python manage.py periodical_sync
+```
+
+Example output:
+```bash
+04/01/2024, 18:46:01: Sync started
+DELETE https://jsonplaceholder.typicode.com/comments/496/
+DELETE https://jsonplaceholder.typicode.com/comments/497/
+DELETE https://jsonplaceholder.typicode.com/comments/498/
+DELETE https://jsonplaceholder.typicode.com/comments/499/
+DELETE https://jsonplaceholder.typicode.com/comments/500/
+DELETE https://jsonplaceholder.typicode.com/posts/100/
+POST https://jsonplaceholder.typicode.com/posts data='{"id": 101, "userId": 99999942, "title": "fdfdf", "body": "fdfdf"}'
+POST https://jsonplaceholder.typicode.com/comments data='{"id": 501, "postId": 101, "name": "32332", "email": "fdffsfs@ffds.fds", "body": "fdfdsfdsfsd"}'
+PUT https://jsonplaceholder.typicode.com/posts/90/ data='{"id": 90, "userId": 9, "title": "ad iusto omnis odit dolor voluptatibusffffff", "body": "minus omnis soluta ..."}'
+04/01/2024, 18:46:01: Sycsessfully synced, elapsed time: 0.01s.
 ```
